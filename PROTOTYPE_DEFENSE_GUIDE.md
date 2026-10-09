@@ -11,13 +11,15 @@ The app is a front-end prototype. Its data exists only while the app is running.
 ## 2. Project files
 
 - `index.js` is Expo's entry point. It registers `App` so Expo Go knows what component to launch.
-- `App.js` contains the main React component, state, input validation, add/delete functions, screen content, and basic navigation.
+- `App.js` contains the shared workout list, app header, and basic navigation. It renders `HomeScreen.js` or `HistoryScreen.js` based on the selected page.
+- `HomeScreen.js` contains the Home form, input state, input validation, and add-workout function. It receives the shared list setter from `App.js` through props.
+- `HistoryScreen.js` contains the History list and delete function. It receives the workout array and its setter from `App.js` through props.
 - `styles.js` contains the React Native styles, including the Flexbox layout and shapes used to draw the Home and History icons.
 - `package.json` lists the packages used by the project and the Expo start commands. `react-native-safe-area-context` supplies the safe-area components used by `App.js`.
 - `package-lock.json` records the installed dependency versions. It helps npm install the same dependency tree.
 - `app.json` contains Expo app configuration, including the app name and icon/splash references.
 
-For the instructor's topic list, the main source files to explain are `App.js`, `styles.js`, and `index.js`.
+For the instructor's topic list, explain `App.js`, `HomeScreen.js`, `HistoryScreen.js`, `styles.js`, and `index.js`.
 
 ## 3. How the app starts: `index.js`
 
