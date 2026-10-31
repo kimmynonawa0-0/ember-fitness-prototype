@@ -1,42 +1,82 @@
 import { StyleSheet } from 'react-native';
 
-// Flexbox places the exercise details and Delete button in one row.
 const styles = StyleSheet.create({
+  appRoot: {
+    flex: 1,
+    backgroundColor: '#101010',
+  },
   screen: {
     flex: 1,
     backgroundColor: '#101010',
   },
   header: {
-    padding: 20,
+    paddingHorizontal: 22,
+    paddingTop: 16,
     paddingBottom: 12,
   },
   brand: {
     color: '#f07842',
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 15,
+    fontWeight: '800',
+    letterSpacing: 2,
   },
-  title: {
+  headerTitle: {
     color: '#ffffff',
     fontSize: 28,
     fontWeight: 'bold',
     marginTop: 8,
   },
-  subtitle: {
+  headerSubtitle: {
     color: '#aaaaaa',
-    fontSize: 15,
-    marginTop: 6,
+    fontSize: 14,
+    lineHeight: 20,
+    marginTop: 5,
   },
-  form: {
+  pageScroll: {
+    flex: 1,
+  },
+  pagePadding: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 28,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    marginBottom: 18,
+  },
+  statCard: {
+    flex: 1,
     backgroundColor: '#1d1d1f',
-    marginHorizontal: 20,
+    borderRadius: 12,
     padding: 16,
-    borderRadius: 10,
+    marginHorizontal: 5,
   },
-  label: {
+  statValue: {
+    color: '#f07842',
+    fontSize: 26,
+    fontWeight: 'bold',
+  },
+  statLabel: {
+    color: '#aaaaaa',
+    fontSize: 12,
+    marginTop: 5,
+  },
+  formCard: {
+    backgroundColor: '#1d1d1f',
+    padding: 18,
+    borderRadius: 12,
+  },
+  sectionTitle: {
+    color: '#ffffff',
+    fontSize: 19,
+    fontWeight: 'bold',
+    marginBottom: 16,
+  },
+  fieldLabel: {
     color: '#ffffff',
     fontSize: 14,
     fontWeight: 'bold',
-    marginBottom: 6,
+    marginBottom: 7,
   },
   input: {
     backgroundColor: '#101010',
@@ -44,55 +84,115 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#444444',
     borderRadius: 8,
-    padding: 10,
-    marginBottom: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 11,
+    marginBottom: 15,
     fontSize: 16,
   },
-  addButton: {
+  primaryButton: {
     backgroundColor: '#f07842',
+    minHeight: 48,
     alignItems: 'center',
-    padding: 13,
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderRadius: 8,
   },
   buttonText: {
     color: '#ffffff',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: 'bold',
   },
-  message: {
-    color: '#ffffff',
-    marginTop: 10,
+  successMessage: {
+    color: '#a8dfb0',
+    marginTop: 12,
+    lineHeight: 20,
   },
-  pageContent: {
-    flex: 1,
-  },
-  history: {
-    flex: 1,
-  },
-  listTitle: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: 'bold',
+  errorMessage: {
+    color: '#ff9b83',
     marginHorizontal: 20,
-    marginTop: 20,
+    marginTop: 10,
+    lineHeight: 20,
   },
-  list: {
-    padding: 20,
+  textButton: {
+    alignSelf: 'center',
+    padding: 16,
+    marginTop: 8,
+  },
+  textButtonLabel: {
+    color: '#f07842',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  tabBar: {
+    backgroundColor: '#181818',
+    borderTopColor: '#343434',
+    height: 62,
+    paddingTop: 5,
+    paddingBottom: 5,
+  },
+  tabBarLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  historySummary: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginHorizontal: 20,
+    marginBottom: 14,
+  },
+  summaryText: {
+    color: '#aaaaaa',
+    fontSize: 13,
+  },
+  filterRow: {
+    flexDirection: 'row',
+    marginHorizontal: 20,
+    marginBottom: 8,
+  },
+  filterButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    backgroundColor: '#1d1d1f',
+    marginRight: 8,
+  },
+  selectedFilterButton: {
+    backgroundColor: '#f07842',
+  },
+  filterLabel: {
+    color: '#aaaaaa',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  selectedFilterLabel: {
+    color: '#ffffff',
+  },
+  historyList: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 24,
+    flexGrow: 1,
   },
   emptyText: {
     color: '#aaaaaa',
     fontSize: 15,
+    lineHeight: 22,
+    textAlign: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 28,
   },
-  workoutRow: {
+  workoutCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#1d1d1f',
-    padding: 16,
+    padding: 15,
     borderRadius: 10,
     marginBottom: 10,
   },
   workoutDetails: {
     flex: 1,
+    paddingRight: 8,
   },
   exerciseName: {
     color: '#ffffff',
@@ -100,83 +200,206 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   repText: {
-    color: '#aaaaaa',
-    marginTop: 4,
-  },
-  deleteText: {
     color: '#f07842',
     fontSize: 14,
+    marginTop: 4,
+  },
+  dateText: {
+    color: '#888888',
+    fontSize: 12,
+    marginTop: 4,
+  },
+  rowActions: {
+    alignItems: 'flex-end',
+  },
+  smallActionButton: {
+    minWidth: 62,
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 9,
+    borderRadius: 6,
+    backgroundColor: '#303033',
+    marginVertical: 3,
+  },
+  smallActionText: {
+    color: '#ffffff',
+    fontSize: 12,
     fontWeight: 'bold',
   },
-  tabBar: {
-    flexDirection: 'row',
-    borderTopWidth: 1,
-    borderTopColor: '#444444',
-    paddingVertical: 14,
+  deleteActionButton: {
+    backgroundColor: '#3a2420',
   },
-  tab: {
+  deleteText: {
+    color: '#ff9b83',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  modalBackdrop: {
+    flex: 1,
+    justifyContent: 'center',
+    padding: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.72)',
+  },
+  modalCard: {
+    backgroundColor: '#1d1d1f',
+    padding: 20,
+    borderRadius: 14,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 4,
+  },
+  secondaryButton: {
+    minHeight: 46,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    borderColor: '#555555',
+    borderRadius: 8,
+    marginRight: 8,
+  },
+  secondaryButtonText: {
+    color: '#ffffff',
+    fontWeight: 'bold',
+  },
+  libraryControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingBottom: 8,
+  },
+  searchInput: {
+    flex: 1,
+    backgroundColor: '#1d1d1f',
+    color: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#444444',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+  },
+  refreshButton: {
+    paddingVertical: 11,
+    paddingHorizontal: 12,
+    marginLeft: 8,
+  },
+  refreshButtonText: {
+    color: '#f07842',
+    fontSize: 13,
+    fontWeight: 'bold',
+  },
+  libraryList: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 24,
+    flexGrow: 1,
+  },
+  exerciseCard: {
+    backgroundColor: '#1d1d1f',
+    padding: 16,
+    borderRadius: 11,
+    marginBottom: 12,
+  },
+  exerciseCardHeading: {
+    marginBottom: 8,
+  },
+  exerciseCategory: {
+    color: '#f07842',
+    fontSize: 11,
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 5,
+  },
+  exerciseDescription: {
+    color: '#cccccc',
+    fontSize: 13,
+    lineHeight: 19,
+    marginBottom: 10,
+  },
+  exerciseMeta: {
+    color: '#aaaaaa',
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  exerciseCredit: {
+    color: '#777777',
+    fontSize: 10,
+    lineHeight: 16,
+    marginTop: 8,
+  },
+  secondaryActionButton: {
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: '#f07842',
+    borderRadius: 7,
+    paddingVertical: 9,
+    paddingHorizontal: 12,
+    marginTop: 12,
+  },
+  secondaryActionText: {
+    color: '#f07842',
+    fontSize: 13,
+    fontWeight: 'bold',
+  },
+  loadingPanel: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 42,
+    padding: 24,
   },
-  homeIcon: {
-    width: 30,
-    height: 30,
+  loadingText: {
+    color: '#aaaaaa',
+    fontSize: 14,
+    marginTop: 14,
+  },
+  errorPanel: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    padding: 24,
   },
-  homeRoof: {
-    width: 0,
-    height: 0,
-    borderLeftWidth: 13,
-    borderRightWidth: 13,
-    borderBottomWidth: 12,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
+  errorTitle: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
   },
-  homeBody: {
-    width: 18,
-    height: 12,
-    marginTop: -1,
+  messageBody: {
+    color: '#aaaaaa',
+    fontSize: 14,
+    lineHeight: 21,
+    textAlign: 'center',
+    marginBottom: 16,
   },
-  activeRoof: {
-    borderBottomColor: '#f07842',
+  attributionLink: {
+    alignItems: 'center',
+    paddingVertical: 8,
   },
-  inactiveRoof: {
-    borderBottomColor: '#aaaaaa',
+  saveWarning: {
+    backgroundColor: '#3a2420',
+    color: '#ffb09a',
+    fontSize: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    textAlign: 'center',
   },
-  activeIcon: {
-    backgroundColor: '#f07842',
+  messageScreen: {
+    flex: 1,
+    backgroundColor: '#101010',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
   },
-  inactiveIcon: {
-    backgroundColor: '#aaaaaa',
-  },
-  clockIcon: {
-    width: 26,
-    height: 26,
-    borderWidth: 2,
-    borderRadius: 13,
-  },
-  activeClock: {
-    borderColor: '#f07842',
-  },
-  inactiveClock: {
-    borderColor: '#aaaaaa',
-  },
-  clockHandTop: {
-    position: 'absolute',
-    width: 2,
-    height: 8,
-    top: 4,
-    left: 10,
-  },
-  clockHandSide: {
-    position: 'absolute',
-    width: 7,
-    height: 2,
-    top: 11,
-    left: 10,
+  messageTitle: {
+    color: '#ffffff',
+    fontSize: 21,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginTop: 24,
   },
 });
 
