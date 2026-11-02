@@ -1,43 +1,50 @@
-# EMBER — Simple Workout Prototype
+# EMBER — Daily Rep
 
-EMBER is a two-page React Native prototype for adding and deleting exercises. It follows the examples in `lessons-for-reference`. The purpose is to demonstrate how state updates the screen.
+Daily Rep is a small workout tracker built with React Native and Expo. A user can log exercises and repetitions, review and edit workout history, and browse an online exercise guide. Workout records are saved on the device, so they remain after the app is closed.
 
-## Files to study
+## Features
 
-- `App.js` contains the single functional component, two page views, and simple add/delete functions.
-- `styles.js` contains `StyleSheet.create()` and the Flexbox row for each exercise.
-- `index.js` is Expo's generated entry file. It loads `App.js`.
+- **Today:** log an exercise and reps, and see today's exercise and rep totals.
+- **History:** review all records or today's records, edit an entry, or delete it after confirmation.
+- **Explore:** search an exercise guide loaded from the [wger REST API](https://wger.de). Choose an exercise to prefill the Today form. This screen needs an internet connection and has loading, error, and retry feedback.
+- **Local persistence:** workout records are stored with AsyncStorage. The guide data is fetched online and is not the source of workout history.
 
-The older, more detailed EMBER source is preserved in the sibling `daily-rep-legacy/` folder. It is not part of this running app. The five PNGs in `assets/brand/` are used for the Expo icon and splash screen.
+There is no sign-in, backend, or cloud synchronization. Workout history stays on the device where it was created.
 
-## Lesson concepts
+## Main files
 
-1. `useState` holds the input text, workout array, next ID, message, and selected page.
-2. Each `TextInput` is controlled by `value` and `onChangeText`.
-3. `TouchableOpacity` runs `addWorkout`, `deleteWorkout`, or changes pages through `onPress`.
-4. Spread (`[...workouts, newWorkout]`) creates a new array when adding.
-5. `.filter()` creates a new array when deleting.
-6. `FlatList` displays the History array using `data`, `renderItem`, and `keyExtractor`.
-7. `View`, `Text`, and Flexbox make the layout; the styles are in another file using `import`/`export`.
+- `App.js` sets up the React Navigation bottom tabs and the app's startup states.
+- `WorkoutContext.js` shares the workout list, loads/saves it with AsyncStorage, and exposes add, update, and delete functions.
+- `HomeScreen.js` validates and records today's exercises.
+- `HistoryScreen.js` displays, edits, filters, and deletes workout records with `FlatList`.
+- `ExerciseLibraryScreen.js` fetches and searches the wger exercise guide using `useEffect` and `async`/`await`.
+- `AppHeader.js` keeps the screen header consistent; `styles.js` contains the shared Flexbox styles.
+- `workoutUtils.js` contains the small date, validation, and total-rep helpers.
+- `PROTOTYPE_DEFENSE_GUIDE.md` explains the app flow and gives a defense walkthrough.
+- `lessons-for-reference/lesson6`, `lesson7`, and `lesson8` contain the course references used for the final update.
 
-The main flow is: **type → Add Exercise → History → FlatList shows the row → Delete removes it**.
+## Lesson concepts in this project
 
-The Home and History icon tabs are fixed at the bottom and share the same list state. The house opens the exercise form; the clock opens History. Records exist only while the app is open. Reloading clears the list. There is no account, backend, database, or API.
+- **Lesson 6:** the Explore screen fetches API data in `useEffect`; the effect has a dependency array and cleanup guard. `async`/`await` handles the request. Loading, error, empty, and retry states keep the screen informative.
+- **Lesson 7:** `createBottomTabNavigator` provides Today, History, and Explore. Shared workout state lives in the nearest common owner, `WorkoutProvider`, and `useContext` lets the screens access it without passing props through every tab. User actions and errors provide visible feedback.
+- **Lesson 8:** AsyncStorage reads the saved JSON on startup and writes updates. `JSON.parse` restores the array and `JSON.stringify` saves it. Add, read, edit, and delete cover the workout record CRUD flow.
 
-## Run
+## Run the app
 
-From this `daily-rep` folder:
+From this `daily-rep` directory:
 
 ```bash
 npm install
 npx expo start
 ```
 
-Scan the QR code with Expo Go. Expo SDK 57 is used in this project.
+Use Expo Go to scan the QR code. The project uses Expo SDK 57; `AGENTS.md` links to the versioned Expo documentation used for SDK-specific changes.
 
-## Short defense demonstration
+## Defense demonstration
 
-1. Enter `Push Ups` and `10`, then tap **Add Exercise**.
-2. Tap the clock icon and point out the new FlatList row and updated count.
-3. Tap **Delete** and show that the row disappears; tap the house icon to return to Home.
-4. Explain that the UI changes because the `setWorkouts` state setter makes React render again.
+1. Open **Explore**, search for an exercise, and tap **Log this exercise**. Point out the loading/error states and the navigation parameter that prefills Today.
+2. Enter a repetition count on **Today** and save. Explain the controlled inputs, validation, Context action, and immutable array update.
+3. Open **History**, edit the saved record, then delete it. Point out `FlatList`, the edit modal, and the delete confirmation.
+4. Reload the app and show that the record remains. Explain the AsyncStorage read/write and JSON conversion.
+
+Exercise names and descriptions come from wger; individual records display their source/creator and license where provided. If the API is unavailable, local workout tracking still works.

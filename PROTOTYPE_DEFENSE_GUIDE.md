@@ -1,225 +1,148 @@
-# Daily Rep Prototype Defense Guide
+# Daily Rep — Final MCO Defense Guide
 
-This guide explains the active Daily Rep prototype so each group member can describe how it works and answer questions about its code.
+This guide explains the current EMBER app, its main data flow, and how the Lesson 6–8 ideas are used. The project is intentionally kept in plain JavaScript with small functional components so the code can be followed and explained during a defense.
 
 ## 1. What the app does
 
-Daily Rep lets a user record an exercise and its number of repetitions. The user can open History to view saved exercises and delete an exercise. A two-button bar at the bottom switches between Home and History.
+Daily Rep is an offline-first workout tracker with three bottom tabs:
 
-The app is a front-end prototype. Its data exists only while the app is running. It has no database, account system, backend, or API, so the list resets when the app reloads.
+- **Today** records an exercise and its rep count, then shows today's exercise and rep totals.
+- **History** lists saved records, filters to today's entries, and lets the user edit or delete an entry.
+- **Explore** fetches exercise names and details from the wger public REST API. A selected exercise can be sent to Today to prefill the form.
+
+Workout history is stored on the device with AsyncStorage. There is no account, backend, or cloud synchronization. The Explore tab needs an internet connection; if its request fails, the app shows an error and retry option while local workout tracking remains available.
 
 ## 2. Project files
 
-- `index.js` is Expo's entry point. It registers `App` so Expo Go knows what component to launch.
-- `App.js` contains the shared workout list, app header, and basic navigation. It renders `HomeScreen.js` or `HistoryScreen.js` based on the selected page.
-- `HomeScreen.js` contains the Home form, input state, input validation, and add-workout function. It receives the shared list setter from `App.js` through props.
-- `HistoryScreen.js` contains the History list and delete function. It receives the workout array and its setter from `App.js` through props.
-- `styles.js` contains the React Native styles, including the Flexbox layout and shapes used to draw the Home and History icons.
-- `package.json` lists the packages used by the project and the Expo start commands. `react-native-safe-area-context` supplies the safe-area components used by `App.js`.
-- `package-lock.json` records the installed dependency versions. It helps npm install the same dependency tree.
-- `app.json` contains Expo app configuration, including the app name and icon/splash references.
+- `index.js` is Expo's entry point. It registers `App`.
+- `App.js` provides safe-area support, wraps the app in `WorkoutProvider`, handles storage startup feedback, and declares the bottom tab navigator.
+- `WorkoutContext.js` owns the shared workout array. It loads and saves the array with AsyncStorage and provides the add, update, and delete functions to screens.
+- `HomeScreen.js` owns the Today form state, validates user input, records a workout, and displays today's totals.
+- `HistoryScreen.js` renders saved entries with `FlatList`, filters them, and handles editing and deletion.
+- `ExerciseLibraryScreen.js` fetches and searches the wger exercise list and links a selected item to the Today form.
+- `AppHeader.js` is the shared screen heading.
+- `workoutUtils.js` contains small helpers for validating exercise names, checking dates, formatting dates, and totaling reps.
+- `styles.js` contains the app's shared React Native styles and Flexbox layout.
+- `README.md` describes how to run and demonstrate the app.
 
-For the instructor's topic list, explain `App.js`, `HomeScreen.js`, `HistoryScreen.js`, `styles.js`, and `index.js`.
+## 3. How the app starts
 
-## 3. How the app starts: `index.js`
+`index.js` imports `App` and calls Expo's `registerRootComponent(App)`. In `App.js`, `SafeAreaProvider` makes device inset information available and `WorkoutProvider` starts reading saved workout data. While that read is in progress, `AppNavigation` shows a loading screen. If reading fails, it offers **Try Again** and **Clear Saved Data** instead of silently replacing the history.
 
-```js
-import { registerRootComponent } from 'expo';
-import App from './App';
+When storage is ready, `AppNavigation` renders one `NavigationContainer` and a `createBottomTabNavigator` with Today, History, and Explore routes. Each route points to a screen component. The navigator owns tab selection and keeps a tab's screen state when the user moves between tabs.
 
-registerRootComponent(App);
-```
+## 4. Shared state and Context
 
-`registerRootComponent` tells Expo to render the imported `App` component. This file is an app bootstrap file; it does not contain the workout interface or workout logic.
+The workout list is used by Today and History, so `WorkoutProvider` is the common owner of that state. It provides these values through `WorkoutContext`:
 
-## 4. Imports in `App.js`
+| Value or function | Purpose |
+| --- | --- |
+| `workouts` | The current array of workout records |
+| `addWorkout(workout)` | Adds a record using a new array |
+| `updateWorkout(id, changes)` | Replaces the matching record with an updated object |
+| `deleteWorkout(id)` | Removes a record with `filter` |
+| `isLoading`, `loadError`, `saveError` | Lets the app show storage feedback |
 
-```js
-import React, { useState } from 'react';
-```
+Screens call `useWorkoutContext()` to read these values. This avoids passing the same workout data through navigation components that do not use it. The updates use React state setters and do not mutate the existing array or objects.
 
-- `React` is the library used to build the interface.
-- `useState` is a React Hook for storing values that can change while the app runs. When a state setter is called, React renders the affected interface again.
+## 5. Local persistence: Lesson 8
 
-```js
-import {
-  StatusBar,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-import HomeScreen from './HomeScreen';
-import HistoryScreen from './HistoryScreen';
-```
+AsyncStorage stores strings, so `WorkoutContext.js` uses `JSON.parse` after `getItem` to restore an array and `JSON.stringify` before `setItem` to save it.
 
-- `View` groups and lays out interface elements.
-- `Text` displays text.
-- `TouchableOpacity` creates a touchable control that runs an action when pressed.
-- `StatusBar` controls the appearance of the phone's status bar.
-- `HomeScreen` and `HistoryScreen` are the two view components. `App.js` passes them the state values and functions they need.
+1. When the provider mounts, a `useEffect` reads the key `@daily-rep/workouts-v1`.
+2. A valid saved array becomes the `workouts` state. Any record without a date receives a usable date when it is loaded.
+3. `isReady` prevents the save effect from writing the initial empty array before the read has completed.
+4. A second `useEffect` saves the complete workout array whenever it changes. A small promise queue keeps rapid updates in order.
+5. Storage errors are surfaced in the interface. A load failure can be retried or cleared; a save failure displays a warning.
 
-`HomeScreen.js` imports `TextInput` for the controlled form fields. `HistoryScreen.js` imports `FlatList` for the workout list. This keeps each screen's UI in its own small file while the shared data and workout logic stay in `App.js`.
+The workout record has this shape:
 
 ```js
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import styles from './styles';
+{
+  id: 'unique-id',
+  name: 'Push-ups',
+  reps: 12,
+  createdAt: '2026-10-29T10:30:00.000Z'
+}
 ```
 
-- `SafeAreaProvider` provides device safe-area information; `SafeAreaView` keeps screen content within the usable area around notches and system bars. They come from `react-native-safe-area-context` because React Native's built-in `SafeAreaView` is deprecated.
-- `styles` imports the style object exported by `styles.js`.
+AsyncStorage is local, unencrypted device storage. It is appropriate for this small app's workout history, but it is not a cloud backup or a secure vault.
 
-## 5. The `App` component and shared state
+## 6. Creating a workout: Today
 
-`export default function App()` declares the main functional component and makes it available to `index.js`.
+`HomeScreen.js` keeps `exercise` and `reps` in local state. Each `TextInput` is controlled: its `value` comes from state and `onChangeText` updates that state.
 
-`App` keeps two state values that are shared by the two screens:
+When **Save Exercise** is tapped, `addTodaysWorkout()`:
 
-| State | Initial value | Purpose |
-| --- | --- | --- |
-| `workouts` | `[]` | Array of saved exercise objects |
-| `page` | `'Home'` | Which view is displayed: Home or History |
+1. Trims the exercise name and converts the reps text with `Number()`.
+2. Calls `isValidExerciseName()` and checks that reps are a positive whole number.
+3. Creates a record with an ID, name, reps, and current timestamp.
+4. Calls `addWorkout()`, which appends the record with `[...currentWorkouts, workout]`.
+5. Clears the inputs and displays a success message. Invalid input gets an error message instead.
 
-Each `useState` call returns a current value and a setter. `workouts` lives in `App` because both screens need to read or update the same list. The `page` value chooses which screen to display. Each screen keeps its own screen-specific state and functions.
+The Today totals are derived from the shared list using `isToday()` and `getTotalReps()`. They are calculated from records rather than stored separately, so they cannot drift out of sync with the history.
 
-## 6. Adding an exercise: `HomeScreen.js` and `addWorkout()`
+## 7. Reading, updating, and deleting: History
 
-`HomeScreen.js` contains the Exercise and Reps input state and the `addWorkout()` function. The Add Exercise button calls it using `onPress`. It follows this sequence:
+`HistoryScreen.js` passes the shared `workouts` array to `FlatList`. The list uses each record's `id` as its key and displays the name, reps, and date. The filter state selects either all records or only today's records.
 
-1. `exercise.trim()` removes spaces at the beginning and end of the name.
-2. `Number(reps)` converts the typed repetition text into a number.
-3. `hasValidName` checks the name with a regular expression. It allows English letters, spaces, apostrophes, and hyphens, so names like `Push-ups` are allowed but `pushup&92` is rejected. `trim()` only removes spaces at the edges; it does not reject symbols or digits inside the name.
-4. The `if` condition rejects an empty or invalid name, a rep value that is not a whole number, or a number less than or equal to zero.
-5. `newWorkout` is an object containing an ID, the cleaned `name`, and numeric `reps`. The ID combines the current time and a random number to make it unique for the list.
-6. `setWorkouts(currentWorkouts => [...currentWorkouts, newWorkout])` asks React to make a new array containing the current workouts plus the new one. The spread syntax (`...`) copies the existing items.
-7. `setExercise('')` and `setReps('')` clear the input fields.
-8. `setMessage(...)` displays confirmation.
+- **Update:** Edit opens a modal with controlled inputs. The same validation is used as in Today. `updateWorkout()` maps over the list and creates a replacement object for the matching ID; the original date is preserved.
+- **Delete:** Delete asks for confirmation with `Alert.alert`. Confirming calls `deleteWorkout()`, which uses `filter` to create a list without that ID.
+- **Persistence:** Either update changes the Context state, which triggers the persistence effect and writes the new list to AsyncStorage.
 
-The list is updated by creating a new array rather than directly changing the existing array. This lets React detect the state update and render the latest list.
+This covers Create, Read, Update, and Delete (CRUD) for workout records.
 
-## 7. Deleting an exercise: `HistoryScreen.js` and `deleteWorkout(id)`
+## 8. Exercise data fetching: Lesson 6
 
-`HistoryScreen.js` contains the `deleteWorkout(id)` function because deletion is a History screen action. Each row has a Delete button. Its `onPress` calls `deleteWorkout(item.id)` with that row's ID.
+`ExerciseLibraryScreen.js` requests:
 
-```js
-setWorkouts(currentWorkouts =>
-  currentWorkouts.filter(workout => workout.id !== id)
-);
+```text
+https://wger.de/api/v2/exerciseinfo/?language=2&limit=30
 ```
 
-`.filter()` returns a new array containing only workouts whose IDs do not match the selected ID. Updating `workouts` makes the displayed list refresh.
+Its `useEffect` runs when the Explore screen first mounts and when the refresh counter changes. The effect calls an inner `async` function, uses `await fetch(...)`, checks `response.ok`, and then converts the JSON response into the smaller set of fields that the screen needs. `catch` displays an error; `finally` ends the loading state. The cleanup flag ignores a late response if the screen has been removed before the request finishes.
 
-## 8. Inputs and controlled components
+The screen has distinct loading, error, empty, and results UI. The user can retry a failed request or search by exercise name, category, or muscle. Each result shows its author/license where provided and has a **Log this exercise** button.
 
-Both `TextInput` controls in `HomeScreen.js` are connected to local screen state:
+That button uses `navigation.navigate('Home', { exerciseName: item.name })`. `HomeScreen` watches that route parameter in its own `useEffect`, fills the exercise input, and clears the parameter so it is not applied again on later renders. This demonstrates passing small route data between tabs.
 
-- `value={exercise}` displays the current Exercise state.
-- `onChangeText={setExercise}` updates it whenever the user types.
-- `value={reps}` and `onChangeText={setReps}` do the same for Reps.
-- `keyboardType="number-pad"` requests a number keypad for the Reps field. The validation is still needed because the app must check that the value is a positive whole number.
+## 9. Navigation and UI feedback: Lesson 7
 
-An input connected this way is called a **controlled input**: the displayed text is kept in React state.
+`createBottomTabNavigator()` defines three named routes. The tab bar remains available while the user moves between the main sections. Shared workout state is held above the screens in `WorkoutProvider`, following the lesson's shared-state idea. Context is used here because several tab screens need common data; for a single parent-child relationship, ordinary props would be simpler.
 
-## 9. Home and History screens
+The app provides feedback instead of leaving the user to infer an outcome: storage loading and errors, API loading and errors, form validation, add/update/delete confirmation, empty lists, and a visible warning if saving fails.
 
-The header uses the `page` state to show a different title and subtitle for Home and History.
+## 10. Styling
 
-Inside `pageContent`, a conditional expression checks `page === 'Home'`:
+`styles.js` uses `StyleSheet.create()` to keep visual styles out of most screen logic. Flexbox lays out the daily summary cards, workout rows, action buttons, and bottom navigation. The orange accent and dark background are carried over from the midterm EMBER design.
 
-- When true, it renders `HomeScreen` and passes the shared `setWorkouts` function as a prop.
-- Otherwise, it renders `HistoryScreen` and passes the shared `workouts` array and `setWorkouts` function as props.
+## 11. Short defense walkthrough
 
-Each screen file owns its screen-specific state and functions: Home owns input state and `addWorkout`; History owns `deleteWorkout` and the `FlatList` UI. `App.js` owns only the workout list and selected page, then passes the shared list/setter to the screens as props. A prop is a value or function a parent component passes to a child component. This keeps the list available to both screens while putting each screen's behavior beside its UI.
+1. Start on **Today** and explain the controlled fields and input validation.
+2. Open **Explore**, point out the loading UI, fetched results, and search. Tap **Log this exercise** and explain the `exerciseName` route parameter.
+3. Enter reps on Today and save. Explain that Context updates the shared list immutably and the totals are derived from it.
+4. Open **History**, edit the entry, and then delete it. Point out `FlatList`, `.map()`, `.filter()`, and the confirmation dialog.
+5. Restart the app and show the record still exists. Explain the `useEffect` read/write flow and JSON conversion.
 
-The Home and History navigation controls are `TouchableOpacity` components at the bottom. Their `onPress` handlers call `setPage('Home')` or `setPage('History')`. The selected icon changes color based on the same `page` state.
+## 12. Common defense questions
 
-These controls provide **basic state-based navigation** between two views. They do not use a navigation stack or the React Navigation library. The workout array stays in the same `App` component while the view changes, so exercises remain available when switching between Home and History.
+**Why use `useEffect` for the API request?**  
+Fetching is a side effect, not part of calculating the screen's UI. `useEffect` runs it after render, and its dependency array says it runs on first mount and when the refresh counter changes.
 
-The icon controls also have `accessibilityLabel`, `accessibilityRole`, and `accessibilityState` properties. These provide assistive technologies with the button name, role, and selected state.
+**Why is there a cleanup flag?**  
+It prevents a finished request from calling state setters after its screen has been removed.
 
-## 10. The History `FlatList`
+**Why use Context?**  
+Today and History need the same workout data, and the tab navigator sits between the provider and those screens. Context shares it without passing props through unused components.
 
-`HistoryScreen.js` receives the `workouts` array and passes it to `FlatList` through `data`.
+**Why are the records still there after closing the app?**  
+The app stores the serialized list with AsyncStorage and reads it back when `WorkoutProvider` mounts.
 
-- `renderItem` describes how to draw one workout row. It receives an object containing `item`, the current workout.
-- `keyExtractor={item => item.id}` supplies a stable key so React can track rows when the list changes.
-- `ListEmptyComponent` shows “No exercises yet” when there are no items.
-- The row displays `item.name` and `item.reps`, and its Delete button passes `item.id` to `deleteWorkout`.
+**Does the exercise guide work offline?**  
+No. It uses the wger API and needs a connection. Logging, editing, deleting, and viewing already-saved workouts use local state and AsyncStorage and do not depend on that request.
 
-`FlatList` is designed for lists and can render visible rows efficiently. It is preferable to manually creating an unlimited number of row components for a longer list.
+**Is there a backend or account system?**  
+No. Workout data stays on the current device. The wger service only provides the exercise guide.
 
-## 11. Styling and Flexbox: `styles.js`
-
-`StyleSheet.create({...})` groups named React Native style objects into one exported object. `App.js` refers to these names with expressions such as `style={styles.screen}`.
-
-Important examples:
-
-- `screen: { flex: 1 }` makes the main screen fill available space.
-- `pageContent: { flex: 1 }` lets the content area take the remaining vertical space so the bottom navigation stays below it.
-- `history: { flex: 1 }` gives the History list space to scroll.
-- `workoutRow: { flexDirection: 'row', alignItems: 'center' }` places workout details and Delete next to each other and aligns them vertically.
-- `tabBar: { flexDirection: 'row' }` places Home and History controls side by side.
-- `flex: 1` on each `tab` gives the two controls equal width.
-- `padding`, `margin`, `borderRadius`, `fontSize`, `color`, and `backgroundColor` control spacing and appearance.
-
-The Home icon is drawn from triangle and rectangle-shaped `View` elements. The History icon is drawn from a bordered circular `View` and two narrow `View` elements for clock hands. This avoids another icon dependency. `HomeScreen.js` and `HistoryScreen.js` both import the shared style object from this file.
-
-## 12. Main user flow
-
-1. The app starts on Home because `page` starts as `'Home'`.
-2. The user types an exercise and a rep count.
-3. The user taps Add Exercise.
-4. `addWorkout()` validates the input and appends a workout object to state.
-5. The user taps the History icon.
-6. The conditional view displays the `workouts` array using `FlatList`.
-7. The user can tap Delete; `deleteWorkout()` removes that row from state.
-8. The user can tap the Home icon to return to the form.
-
-## 13. How it matches the instructor's pictured topics
-
-- **Components:** `App` is a functional component composed from React Native components such as `View`, `Text`, `TextInput`, and `FlatList`.
-- **Flexbox:** the screen and rows use `flex`, `flexDirection`, and alignment properties.
-- **Buttons:** `TouchableOpacity` controls add, delete, Home, and History actions.
-- **TextInput:** both inputs are controlled through `value` and `onChangeText`.
-- **Basic navigation:** the Home and History buttons change the `page` state to switch views.
-
-The photo lists “basic navigation”; it does not specify a navigation library. If asked, explain honestly that this prototype uses simple state-based view switching and does not use React Navigation.
-
-## 14. Activity 3 and Activity 4 requirement check
-
-**Activity 3 is covered:** the Home screen has controlled `TextInput` fields, a `TouchableOpacity` Add button, and `useState` for both input values and the workout list. The History screen uses `FlatList`, and each row has a Delete action. The list is local in-memory data and resets when the app reloads, as the activity allows.
-
-**Activity 4 is not covered by this two-screen component refactor:** that activity specifically requires React Navigation's `NavigationContainer` and `createNativeStackNavigator`, at least three distinct screens, `navigation.navigate()`, a custom `navigation.goBack()` button, and data passed with `route.params`. The current Home/History controls are state-based tabs, not a React Navigation stack, and there are only two views. Creating two separate screen files helps organize the UI, but does not by itself satisfy those Activity 4 requirements. The workout add/delete logic can stay in `App.js`, but Activity 4 would require changing the navigation flow and adding a third screen plus route parameter handling.
-
-## 15. Common defense questions
-
-**Why use `useState`?**  
-To store values that change while the app runs. `App` uses it for the shared list and selected page; `HomeScreen` uses it for the input fields and feedback message. When a setter updates a value, React renders the interface with the new value.
-
-**Why store workouts as objects in an array?**  
-Each workout has related values (`id`, `name`, and `reps`), and an array makes it easy to display, add, and remove workouts.
-
-**Why use spread when adding?**  
-It copies the existing array and adds a new item without directly mutating the old array.
-
-**Why use `.filter()` when deleting?**  
-It returns a new array with the selected workout removed.
-
-**Why use `FlatList`?**  
-It is a React Native component made for rendering lists efficiently and uses keys to keep track of individual rows.
-
-**Why use `keyExtractor`?**  
-React needs a stable key for each row to recognize which item changed or was removed. This app uses each workout's ID.
-
-**Why does the list clear after restarting?**  
-The workouts are only in React state. There is no persistent storage or database in this prototype.
-
-**Is the navigation React Navigation?**  
-No. It is basic navigation using a `page` state and conditional rendering. This keeps the example simple and matches the basic-navigation wording in the photo.
-
-**Why are the styles in another file?**  
-Keeping styles in `styles.js` separates layout and appearance from the screen logic and makes them easier to find.
-
-## 16. Short defense presentation
-
-> “Daily Rep is a small workout logging prototype. The user enters an exercise and repetitions in controlled `TextInput` components. The Add button calls `addWorkout`, which validates the values and adds a workout object to the `workouts` state array using spread syntax. The History view displays that array with `FlatList`, and Delete removes an item using `filter`. The bottom Home and History buttons change the `page` state to switch views. The layout is styled separately in `styles.js` using Flexbox. The data is temporary and resets when the app reloads.”
-
+**Why use a `FlatList`?**  
+It is designed for scrolling data collections and uses stable keys to track individual rows.

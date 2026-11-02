@@ -1,87 +1,107 @@
-import React, { useState } from 'react';
-import {
-  StatusBar,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import React from 'react';
+import { ActivityIndicator, StatusBar, Text, TouchableOpacity, View } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import HomeScreen from './HomeScreen';
+import ExerciseLibraryScreen from './ExerciseLibraryScreen';
 import HistoryScreen from './HistoryScreen';
+import HomeScreen from './HomeScreen';
+import { WorkoutProvider, useWorkoutContext } from './WorkoutContext';
 import styles from './styles';
 
-export default function App() {
-  // The workout list is shared by both screens, so it stays here in App.
-  const [workouts, setWorkouts] = useState([]);
-  const [page, setPage] = useState('Home');
+const Tab = createBottomTabNavigator();
+
+function LoadingScreen() {
+  return (
+    <SafeAreaView style={styles.messageScreen}>
+      <Text style={styles.brand}>EMBER</Text>
+      <ActivityIndicator size="large" color="#f07842" />
+      <Text style={styles.loadingText}>Loading your saved workouts...</Text>
+    </SafeAreaView>
+  );
+}
+
+function StorageErrorScreen() {
+  const { retryLoading, clearSavedWorkouts } = useWorkoutContext();
 
   return (
-    <SafeAreaProvider>
-      <SafeAreaView style={styles.screen}>
+    <SafeAreaView style={styles.messageScreen}>
+      <Text style={styles.brand}>EMBER</Text>
+      <Text style={styles.messageTitle}>Your workouts could not be loaded.</Text>
+      <Text style={styles.messageBody}>
+        Try reading your saved data again. If it is damaged, you can clear it and
+        start with an empty history.
+      </Text>
+      <TouchableOpacity style={styles.primaryButton} onPress={retryLoading}>
+        <Text style={styles.buttonText}>Try Again</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.secondaryButton}
+        onPress={clearSavedWorkouts}
+      >
+        <Text style={styles.secondaryButtonText}>Clear Saved Data</Text>
+      </TouchableOpacity>
+    </SafeAreaView>
+  );
+}
+
+function AppNavigation() {
+  const { isLoading, loadError, saveError } = useWorkoutContext();
+
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+
+  if (loadError) {
+    return <StorageErrorScreen />;
+  }
+
+  return (
+    <View style={styles.appRoot}>
       <StatusBar barStyle="light-content" backgroundColor="#101010" />
-
-      <View style={styles.header}>
-        <Text style={styles.brand}>EMBER</Text>
-        <Text style={styles.title}>
-          {page === 'Home' ? 'Daily Workout' : 'History'}
+      {saveError !== '' && (
+        <Text style={styles.saveWarning} accessibilityRole="alert">
+          {saveError}
         </Text>
-        <Text style={styles.subtitle}>
-          {page === 'Home'
-            ? 'Record each exercise and its reps.'
-            : 'Exercises you added during this session.'}
-        </Text>
-      </View>
-
-      <View style={styles.pageContent}>
-        {page === 'Home' ? (
-          <HomeScreen setWorkouts={setWorkouts} />
-        ) : (
-          <HistoryScreen workouts={workouts} setWorkouts={setWorkouts} />
-        )}
-      </View>
-
-      <View style={styles.tabBar}>
-        <TouchableOpacity
-          style={styles.tab}
-          onPress={() => setPage('Home')}
-          accessibilityLabel="Home"
-          accessibilityRole="button"
-          accessibilityState={{ selected: page === 'Home' }}
+      )}
+      <NavigationContainer>
+        <Tab.Navigator
+          screenOptions={{
+            headerShown: false,
+            tabBarActiveTintColor: '#f07842',
+            tabBarInactiveTintColor: '#888888',
+            tabBarStyle: styles.tabBar,
+            tabBarLabelStyle: styles.tabBarLabel,
+            tabBarHideOnKeyboard: true,
+          }}
         >
-          <View style={styles.homeIcon}>
-            <View style={[
-              styles.homeRoof,
-              page === 'Home' ? styles.activeRoof : styles.inactiveRoof,
-            ]} />
-            <View style={[
-              styles.homeBody,
-              page === 'Home' ? styles.activeIcon : styles.inactiveIcon,
-            ]} />
-          </View>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.tab}
-          onPress={() => setPage('History')}
-          accessibilityLabel="History"
-          accessibilityRole="button"
-          accessibilityState={{ selected: page === 'History' }}
-        >
-          <View style={[
-            styles.clockIcon,
-            page === 'History' ? styles.activeClock : styles.inactiveClock,
-          ]}>
-            <View style={[
-              styles.clockHandTop,
-              page === 'History' ? styles.activeIcon : styles.inactiveIcon,
-            ]} />
-            <View style={[
-              styles.clockHandSide,
-              page === 'History' ? styles.activeIcon : styles.inactiveIcon,
-            ]} />
-          </View>
-        </TouchableOpacity>
-      </View>
-      </SafeAreaView>
+          <Tab.Screen
+            name="Home"
+            component={HomeScreen}
+            options={{ title: 'Today', tabBarLabel: 'Today' }}
+          />
+          <Tab.Screen
+            name="History"
+            component={HistoryScreen}
+            options={{ title: 'History', tabBarLabel: 'History' }}
+          />
+          <Tab.Screen
+            name="Exercises"
+            component={ExerciseLibraryScreen}
+            options={{ title: 'Explore', tabBarLabel: 'Explore' }}
+          />
+        </Tab.Navigator>
+      </NavigationContainer>
+    </View>
+  );
+}
+
+export default function App() {
+  return (
+    <SafeAreaProvider>
+      <WorkoutProvider>
+        <AppNavigation />
+      </WorkoutProvider>
     </SafeAreaProvider>
   );
 }
