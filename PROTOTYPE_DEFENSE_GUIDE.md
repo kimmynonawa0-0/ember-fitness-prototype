@@ -78,7 +78,7 @@ When **Save Exercise** is tapped, `addTodaysWorkout()`:
 2. Calls `isValidExerciseName()` and checks that reps are a positive whole number.
 3. Creates a record with an ID, name, reps, and current timestamp.
 4. Calls `addWorkout()`, which appends the record with `[...currentWorkouts, workout]`.
-5. Clears the inputs and displays a success message. Invalid input gets an error message instead.
+5. Clears the inputs and displays a success message. Invalid input gets an error message instead. The message is cleared when the user leaves the tab or starts typing a new entry.
 
 The Today totals are derived from the shared list using `isToday()` and `getTotalReps()`. They are calculated from records rather than stored separately, so they cannot drift out of sync with the history.
 
@@ -111,6 +111,8 @@ That button uses `navigation.navigate('Home', { exerciseName: item.name })`. `Ho
 `createBottomTabNavigator()` defines three named routes. The tab bar remains available while the user moves between the main sections. Shared workout state is held above the screens in `WorkoutProvider`, following the lesson's shared-state idea. Context is used here because several tab screens need common data; for a single parent-child relationship, ordinary props would be simpler.
 
 The app provides feedback instead of leaving the user to infer an outcome: storage loading and errors, API loading and errors, form validation, add/update/delete confirmation, empty lists, and a visible warning if saving fails.
+
+One-off feedback is temporary rather than sticky. `HomeScreen` and `HistoryScreen` each register a `blur` listener inside a `useEffect` (a small lifecycle cleanup) that clears their success message when the tab loses focus, so an old message does not linger when the user returns. Starting a new edit, opening the delete confirmation, or typing a new entry also clears the previous message.
 
 ## 10. Styling
 

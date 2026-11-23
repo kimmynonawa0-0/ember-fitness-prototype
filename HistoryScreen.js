@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   FlatList,
   Modal,
@@ -18,7 +18,7 @@ import {
 } from './workoutUtils';
 import styles from './styles';
 
-export default function HistoryScreen() {
+export default function HistoryScreen({ navigation }) {
   const { workouts, updateWorkout, deleteWorkout } = useWorkoutContext();
   const [selectedFilter, setSelectedFilter] = useState('All');
   const [editingWorkout, setEditingWorkout] = useState(null);
@@ -35,11 +35,22 @@ export default function HistoryScreen() {
     selectedFilter === 'All' || isToday(workout.createdAt)
   ));
 
+  // Clear the action notice when the user leaves this tab so old feedback
+  // does not linger when they come back.
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('blur', () => {
+      setNotice('');
+    });
+
+    return unsubscribe;
+  }, [navigation]);
+
   function startEditing(workout) {
     setEditingWorkout(workout);
     setEditName(workout.name);
     setEditReps(String(workout.reps));
     setEditMessage('');
+    setNotice('');
   }
 
   function closeEditor() {
@@ -71,6 +82,7 @@ export default function HistoryScreen() {
   // A modal confirms deletion instead of Alert.alert, which does not work on web.
   function requestDelete(workout) {
     setDeletingWorkout(workout);
+    setNotice('');
   }
 
   function closeDeleteConfirmation() {

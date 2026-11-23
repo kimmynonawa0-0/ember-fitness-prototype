@@ -31,8 +31,30 @@ export default function HomeScreen({ navigation, route }) {
     }
   }, [navigation, route.params?.exerciseName]);
 
+  // Clear the feedback message when the user leaves this tab so it does
+  // not linger when they come back.
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('blur', () => {
+      setMessage('');
+      setMessageType('success');
+    });
+
+    return unsubscribe;
+  }, [navigation]);
+
   const todaysWorkouts = workouts.filter(workout => isToday(workout.createdAt));
   const todaysReps = getTotalReps(todaysWorkouts);
+
+  // Typing a new entry means the previous feedback no longer applies.
+  function handleExerciseChange(text) {
+    setExercise(text);
+    setMessage('');
+  }
+
+  function handleRepsChange(text) {
+    setReps(text);
+    setMessage('');
+  }
 
   function addTodaysWorkout() {
     const cleanedName = exercise.trim();
@@ -90,7 +112,7 @@ export default function HomeScreen({ navigation, route }) {
           <TextInput
             style={styles.input}
             value={exercise}
-            onChangeText={setExercise}
+            onChangeText={handleExerciseChange}
             placeholder="e.g. Push-ups"
             placeholderTextColor="#777777"
             maxLength={60}
@@ -101,7 +123,7 @@ export default function HomeScreen({ navigation, route }) {
           <TextInput
             style={styles.input}
             value={reps}
-            onChangeText={setReps}
+            onChangeText={handleRepsChange}
             placeholder="e.g. 12"
             placeholderTextColor="#777777"
             keyboardType="number-pad"
