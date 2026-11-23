@@ -250,6 +250,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 4,
   },
+  modalMessage: {
+    color: '#cccccc',
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 16,
+  },
   secondaryButton: {
     minHeight: 46,
     justifyContent: 'center',
@@ -262,6 +268,18 @@ const styles = StyleSheet.create({
   },
   secondaryButtonText: {
     color: '#ffffff',
+    fontWeight: 'bold',
+  },
+  dangerButton: {
+    minHeight: 46,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    backgroundColor: '#3a2420',
+    borderRadius: 8,
+  },
+  dangerButtonText: {
+    color: '#ff9b83',
     fontWeight: 'bold',
   },
   libraryControls: {

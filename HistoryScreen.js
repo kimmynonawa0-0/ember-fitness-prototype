@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  Alert,
   FlatList,
   Modal,
   Text,
@@ -23,6 +22,7 @@ export default function HistoryScreen() {
   const { workouts, updateWorkout, deleteWorkout } = useWorkoutContext();
   const [selectedFilter, setSelectedFilter] = useState('All');
   const [editingWorkout, setEditingWorkout] = useState(null);
+  const [deletingWorkout, setDeletingWorkout] = useState(null);
   const [editName, setEditName] = useState('');
   const [editReps, setEditReps] = useState('');
   const [editMessage, setEditMessage] = useState('');
@@ -68,22 +68,23 @@ export default function HistoryScreen() {
     closeEditor();
   }
 
-  function confirmDelete(workout) {
-    Alert.alert(
-      'Delete this workout?',
-      `${workout.name} will be removed from your history.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            deleteWorkout(workout.id);
-            setNotice('Workout deleted.');
-          },
-        },
-      ]
-    );
+  // A modal confirms deletion instead of Alert.alert, which does not work on web.
+  function requestDelete(workout) {
+    setDeletingWorkout(workout);
+  }
+
+  function closeDeleteConfirmation() {
+    setDeletingWorkout(null);
+  }
+
+  function deleteConfirmedWorkout() {
+    if (deletingWorkout === null) {
+      return;
+    }
+
+    deleteWorkout(deletingWorkout.id);
+    setNotice('Workout deleted.');
+    setDeletingWorkout(null);
   }
 
   function renderWorkout({ item }) {
@@ -105,7 +106,7 @@ export default function HistoryScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.smallActionButton, styles.deleteActionButton]}
-            onPress={() => confirmDelete(item)}
+            onPress={() => requestDelete(item)}
             accessibilityRole="button"
             accessibilityLabel={`Delete ${item.name}`}
           >
@@ -216,6 +217,40 @@ export default function HistoryScreen() {
                 onPress={saveWorkoutChanges}
               >
                 <Text style={styles.buttonText}>Save changes</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={deletingWorkout !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={closeDeleteConfirmation}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <Text style={styles.sectionTitle}>Delete workout?</Text>
+            <Text style={styles.modalMessage}>
+              {deletingWorkout !== null
+                ? `${deletingWorkout.name} will be removed from your history.`
+                : ''}
+            </Text>
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.secondaryButton}
+                onPress={closeDeleteConfirmation}
+              >
+                <Text style={styles.secondaryButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.dangerButton}
+                onPress={deleteConfirmedWorkout}
+                accessibilityRole="button"
+                accessibilityLabel={`Confirm delete ${deletingWorkout !== null ? deletingWorkout.name : ''}`}
+              >
+                <Text style={styles.dangerButtonText}>Delete</Text>
               </TouchableOpacity>
             </View>
           </View>

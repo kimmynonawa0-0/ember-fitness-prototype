@@ -87,7 +87,7 @@ The Today totals are derived from the shared list using `isToday()` and `getTota
 `HistoryScreen.js` passes the shared `workouts` array to `FlatList`. The list uses each record's `id` as its key and displays the name, reps, and date. The filter state selects either all records or only today's records.
 
 - **Update:** Edit opens a modal with controlled inputs. The same validation is used as in Today. `updateWorkout()` maps over the list and creates a replacement object for the matching ID; the original date is preserved.
-- **Delete:** Delete asks for confirmation with `Alert.alert`. Confirming calls `deleteWorkout()`, which uses `filter` to create a list without that ID.
+- **Delete:** Delete opens a confirmation modal. Confirming calls `deleteWorkout()`, which uses `filter` to create a list without that ID. A modal is used instead of `Alert.alert` because alerts are not supported in web builds of the app.
 - **Persistence:** Either update changes the Context state, which triggers the persistence effect and writes the new list to AsyncStorage.
 
 This covers Create, Read, Update, and Delete (CRUD) for workout records.
